@@ -45,6 +45,30 @@ namespace SudokuSolver.Logics
                 }
             }
         }
+        private void CheckCell(int x, int y)
+        {
+            for (int i = 0; i < N2; i++)
+            {
+                //Do something with.
+                //sudoku[x][i] for checking one column.
+                //sudoku[i][x] for checking one row.
+            }
+            int a = WhichBlock(x);
+            int b = WhichBlock(y);
+            
+        }
+        /// <summary>
+        /// To calculate which block a cell is in.
+        /// e.g. x = 5.     x % N = 2.      5 - 2 = 3.  3/3 = 1.
+        /// The cell is 1 block to the right.
+        /// </summary>
+        /// <param name="a">Is the x or y index of the cell.</param>
+        /// <returns>The block x or y index.</returns>
+        private int WhichBlock(int a)
+        {
+            int i = (a - (a % N)) / N;
+            return i;
+        }
 
         private void DissectSudoku()
         {
