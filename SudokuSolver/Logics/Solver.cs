@@ -17,13 +17,23 @@ namespace SudokuSolver.Logics
         /// the code to work on sudoku's of other N sizes.
         /// </summary>
         private readonly int N = 3, N2 = 9;
+        private int[] arrOptions = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+        public bool IsSolved;
         public int[][] Solve(int[][] sudoku)
         {
+            do
+            {
+                IsSolved = true;
+                sudoku = IterateSudokuSolve(sudoku);
+            } while (!IsSolved);
+
             return sudoku;
         }
 
         public int[][] SolveGuessing(int[][] sudoku)
         {
+
+                sudoku = IterateSudokuSolve(sudoku);
             return sudoku;
         }
 
@@ -31,8 +41,22 @@ namespace SudokuSolver.Logics
         {
             return sudoku;
         }
+        #region Initialize Variables.
+        /// <summary>
+        /// Generates ArrOptions 1 to N2 to draw from.
+        /// If one did not wish to have it hardcoded.
+        /// </summary>
+        private void InitializeArrOptions()
+        {
+            arrOptions = new int[9];
+            for (int i = 0; i < N2; i++)
+            {
+                arrOptions[i] = i + 1;
+            }
+        }
+        #endregion
 
-        #region Sudoku Dissection/Iteration
+        #region Sudoku Dissection/Iteration Base Methods
 
         #region check cell methods
         private void CheckCell(int x, int y)
@@ -45,7 +69,7 @@ namespace SudokuSolver.Logics
             }
             //Checks which block the cell is in for both x and y and calls Iterateblock with the results.
             IterateBLock(WhichBlock(x), WhichBlock(y));
-            
+
         }
         /// <summary>
         /// To calculate which block a cell is in.
@@ -110,5 +134,94 @@ namespace SudokuSolver.Logics
         #endregion
 
         #endregion
+
+        #region Solving methods
+        private int[][] IterateSudokuSolve(int[][] sudoku)
+        {
+            sudoku = IterateLoopSolve(sudoku);
+            sudoku = IterateAllBlocksSolve(sudoku);
+            return sudoku;
+        }
+
+        #region Iteration
+        private int[][] IterateLoopSolve(int[][] sudoku)
+        {
+            for (int i = 0; i < N2; i++)
+            {
+                for (int j = 0; j < N2; j++)
+                {
+                    sudoku = CheckSection(sudoku, i, j);
+                    sudoku = CheckSection(sudoku, j, i);
+                }
+            }
+            return sudoku;
+        }
+
+        /// <summary>
+        /// x and y both loop N times.
+        /// To check each block in an N by N Sudoku.
+        /// Using IterateBlock method to deligate the actual cell checking.
+        /// </summary>
+        private int[][] IterateAllBlocksSolve(int[][] sudoku)
+        {
+            for (int y = 0; y < N; y++)
+            {
+                for (int x = 0; x < N; x++)
+                {
+                   sudoku = IterateBLockSolve(sudoku, x, y);
+                }
+            }
+            return sudoku;
+        }
+
+        /// <summary>
+        /// For itirating through one singular block of size N by N.
+        /// Adding x/y * N to i and j respectively to determine which block to check.
+        /// </summary>
+        /// <param name="x">Number of blocks horizontal.</param>
+        /// <param name="y">Number of block vertical.</param>
+        private int[][] IterateBLockSolve(int[][] sudoku, int x, int y)
+        {
+            for (int i = (0 + (x * N)); i < (N + (N * x)); i++)
+            {
+                for (int j = (0 + (y * N)); j < (N + (N * y)); j++)
+                {
+                    sudoku = CheckSection(sudoku, i, j);
+                }
+            }
+            return sudoku;
+        }
+        #endregion
+
+        private int[][] CheckSection(int[][] sudoku, int x, int y)
+        {
+            if (sudoku[x][y] == 0)
+            {
+                List<int> tempList = arrOptions.ToList();
+                for (int i = 0; i < N2; i++)
+                {
+                    tempList.Remove(sudoku[x][i]);
+                    tempList.Remove(sudoku[i][y]);
+                }
+                int a = WhichBlock(x);
+                int b = WhichBlock(y);
+
+                for (int i = (0 + (a * N)); i < (N + (a * N)); i++)
+                {
+                    for (int j = (0 + (b * N)); j < (N + (b * N)); j++)
+                    {
+                        tempList.Remove(sudoku[i][j]);
+                    }
+                }
+
+                if (tempList.Count == 1)
+                    sudoku[x][y] = tempList[0];
+                else
+                    IsSolved = false;
+            }
+
+            return sudoku;
+        }
+        #endregion  
     }
 }
