@@ -32,19 +32,9 @@ namespace SudokuSolver.Logics
             return sudoku;
         }
 
-        #region Sudoku Dissection/Itiration
-        private void IterateLoop(int [][] sudoku)
-        {
-            for (int i = 0; i < N2; i++)
-            {
-                for (int j = 0; j < N2; j++)
-                {
-                    //Do something with.
-                    //sudoku[i][j] for checking columns.
-                    //sudoku[j][i] for checking rows.
-                }
-            }
-        }
+        #region Sudoku Dissection/Iteration
+
+        #region check cell methods
         private void CheckCell(int x, int y)
         {
             for (int i = 0; i < N2; i++)
@@ -53,8 +43,8 @@ namespace SudokuSolver.Logics
                 //sudoku[x][i] for checking one column.
                 //sudoku[i][x] for checking one row.
             }
-            int a = WhichBlock(x);
-            int b = WhichBlock(y);
+            //Checks which block the cell is in for both x and y and calls Iterateblock with the results.
+            IterateBLock(WhichBlock(x), WhichBlock(y));
             
         }
         /// <summary>
@@ -69,27 +59,55 @@ namespace SudokuSolver.Logics
             int i = (a - (a % N)) / N;
             return i;
         }
+        #endregion
 
-        private void DissectSudoku()
+        #region Iteration Methods
+        private void IterateLoop(int[][] sudoku)
         {
-            ///For Itirating through blocks.
-            /// i and j each go through N long steps. Checking a block N by N.
-            /// x adds x * N onto i to check the next two blocks over.
-            /// Whilst y adds y * N onto j each loop to start one block down after the first row of blocks was tested.
+            for (int i = 0; i < N2; i++)
+            {
+                for (int j = 0; j < N2; j++)
+                {
+                    //Do something with.
+                    //sudoku[i][j] for checking columns.
+                    //sudoku[j][i] for checking rows.
+                }
+            }
+        }
+
+        /// <summary>
+        /// x and y both loop N times.
+        /// To check each block in an N by N Sudoku.
+        /// Using IterateBlock method to deligate the actual cell checking.
+        /// </summary>
+        private void IterateAllBlocks()
+        {
             for (int y = 0; y < N; y++)
             {
                 for (int x = 0; x < N; x++)
                 {
-                    for (int i = (0 + (x * N)); i < (N + (N * x)); i++)
-                    {
-                        for (int j = (0 + (y * N)); j < (N + (N * y)); j++)
-                        {
-
-                        }
-                    }
+                    IterateBLock(x, y);
                 }
             }
         }
+
+        /// <summary>
+        /// For itirating through one singular block of size N by N.
+        /// Adding x/y * N to i and j respectively to determine which block to check.
+        /// </summary>
+        /// <param name="x">Number of blocks horizontal.</param>
+        /// <param name="y">Number of block vertical.</param>
+        private void IterateBLock(int x, int y)
+        {
+            for (int i = (0 + (x * N)); i < (N + (N * x)); i++)
+            {
+                for (int j = (0 + (y * N)); j < (N + (N * y)); j++)
+                {
+                    //Do something Sudoku[i][j]
+                }
+            }
+        }
+        #endregion
 
         #endregion
     }
