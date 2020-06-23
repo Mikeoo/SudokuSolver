@@ -10,6 +10,12 @@ namespace SudokuSolver.Logics
 {
     public class Solver
     {
+        /// <summary>
+        /// N en N2 are stand-ins for the size of the sudoku. N2 being N^2. 
+        /// A standard sudoku has N = 3.
+        /// Having them as readonly numbers here and using them for itiration instead of hard coding would allow for 
+        /// the code to work on sudoku's of other N sizes.
+        /// </summary>
         private readonly int N = 3, N2 = 9;
         public int[][] Solve(int[][] sudoku)
         {
@@ -26,7 +32,20 @@ namespace SudokuSolver.Logics
             return sudoku;
         }
 
-        #region Sudoku Dissection
+        #region Sudoku Dissection/Itiration
+        private void IterateLoop(int [][] sudoku)
+        {
+            for (int i = 0; i < N2; i++)
+            {
+                for (int j = 0; j < N2; j++)
+                {
+                    //Do something with.
+                    //sudoku[i][j] for checking columns.
+                    //sudoku[j][i] for checking rows.
+                }
+            }
+        }
+
         private void DissectSudoku()
         {
             ///For Itirating through blocks.
