@@ -52,7 +52,7 @@ namespace SudokuSolver.Logics
             /// i and j each go through N long steps. Checking a block N by N.
             /// x adds x * N onto i to check the next two blocks over.
             /// Whilst y adds y * N onto j each loop to start one block down after the first row of blocks was tested.
-            for (int y = 0; x < N; y++)
+            for (int y = 0; y < N; y++)
             {
                 for (int x = 0; x < N; x++)
                 {
