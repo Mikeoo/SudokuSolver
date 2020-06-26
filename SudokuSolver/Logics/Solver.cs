@@ -17,10 +17,17 @@ namespace SudokuSolver.Logics
         /// the code to work on sudoku's of other N sizes.
         /// </summary>
         private readonly int N = 3, N2 = 9;
+        /// <summary>
+        /// countG is to keep track of at which number of potential numbers to guess the computer can "guess" one.
+        /// Setting countG to highest (9) before attempting to Solve.
+        /// </summary>
+        private int countG;
         private int[] arrOptions = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-        public bool IsSolved;
+        public bool IsSolved, IsNewGuess;
         public int[][] Solve(int[][] sudoku)
         {
+            //Set count to 1 to not allow for guessing.
+            countG = 1;
             do
             {
                 IsSolved = true;
@@ -33,7 +40,8 @@ namespace SudokuSolver.Logics
         public int[][] SolveGuessing(int[][] sudoku)
         {
 
-                sudoku = IterateSudokuSolve(sudoku);
+            sudoku = IterateSudokuGuess(sudoku);
+            sudoku = IterateSudokuSolve(sudoku);
             return sudoku;
         }
 
@@ -56,7 +64,19 @@ namespace SudokuSolver.Logics
         }
         #endregion
 
-        #region Sudoku Dissection/Iteration Base Methods
+        #region Base Methods
+        /// <summary>
+        /// To calculate which block a cell is in.
+        /// e.g. x = 5.     x % N = 2.      5 - 2 = 3.  3/3 = 1.
+        /// The cell is 1 block to the right.
+        /// </summary>
+        /// <param name="a">Is the x or y index of the cell.</param>
+        /// <returns>The block x or y index.</returns>
+        private int WhichBlock(int a)
+        {
+            int i = (a - (a % N)) / N;
+            return i;
+        }
 
         #region check cell methods
         private void CheckCell(int x, int y)
@@ -71,18 +91,7 @@ namespace SudokuSolver.Logics
             IterateBLock(WhichBlock(x), WhichBlock(y));
 
         }
-        /// <summary>
-        /// To calculate which block a cell is in.
-        /// e.g. x = 5.     x % N = 2.      5 - 2 = 3.  3/3 = 1.
-        /// The cell is 1 block to the right.
-        /// </summary>
-        /// <param name="a">Is the x or y index of the cell.</param>
-        /// <returns>The block x or y index.</returns>
-        private int WhichBlock(int a)
-        {
-            int i = (a - (a % N)) / N;
-            return i;
-        }
+
         #endregion
 
         #region Iteration Methods
@@ -135,23 +144,38 @@ namespace SudokuSolver.Logics
 
         #endregion
 
+        #region Guessing methods
+        private int[][] IterateSudokuGuess(int[][] sudoku)
+        {
+            //Set countG to highest possible.
+            countG = N2;
+            //Iterate through Sudoku to check for the lowest list count. Make that new countG;
+            sudoku = IterateLoopSolve(sudoku, CheckGuessCount);
+            sudoku = IterateAllBlocksSolve(sudoku, CheckGuessCount);
+           
+            return sudoku;
+        }
+        #endregion
+
         #region Solving methods
         private int[][] IterateSudokuSolve(int[][] sudoku)
         {
-            sudoku = IterateLoopSolve(sudoku);
-            sudoku = IterateAllBlocksSolve(sudoku);
+            sudoku = IterateLoopSolve(sudoku, CheckSection);
+            sudoku = IterateAllBlocksSolve(sudoku, CheckSection);
             return sudoku;
         }
 
         #region Iteration
-        private int[][] IterateLoopSolve(int[][] sudoku)
+        private int[][] IterateLoopSolve(int[][] sudoku, Func<int[][], int, int, int[][]> func)
         {
             for (int i = 0; i < N2; i++)
             {
                 for (int j = 0; j < N2; j++)
                 {
-                    sudoku = CheckSection(sudoku, i, j);
-                    sudoku = CheckSection(sudoku, j, i);
+                    sudoku = func(sudoku, i, j);
+                    sudoku = func(sudoku, j, i);
+                    //sudoku = CheckSection(sudoku, i, j);
+                    //sudoku = CheckSection(sudoku, j, i);
                 }
             }
             return sudoku;
@@ -162,13 +186,14 @@ namespace SudokuSolver.Logics
         /// To check each block in an N by N Sudoku.
         /// Using IterateBlock method to deligate the actual cell checking.
         /// </summary>
-        private int[][] IterateAllBlocksSolve(int[][] sudoku)
+        private int[][] IterateAllBlocksSolve(int[][] sudoku, Func<int[][], int, int, int[][]> func)
         {
             for (int y = 0; y < N; y++)
             {
                 for (int x = 0; x < N; x++)
                 {
-                   sudoku = IterateBLockSolve(sudoku, x, y);
+                    sudoku = IterateBLockSolve(sudoku, x, y, func);
+                    //sudoku = IterateBLockSolve(sudoku, x, y);
                 }
             }
             return sudoku;
@@ -180,13 +205,14 @@ namespace SudokuSolver.Logics
         /// </summary>
         /// <param name="x">Number of blocks horizontal.</param>
         /// <param name="y">Number of block vertical.</param>
-        private int[][] IterateBLockSolve(int[][] sudoku, int x, int y)
+        private int[][] IterateBLockSolve(int[][] sudoku, int x, int y, Func<int[][], int, int, int[][]> func)
         {
             for (int i = (0 + (x * N)); i < (N + (N * x)); i++)
             {
                 for (int j = (0 + (y * N)); j < (N + (N * y)); j++)
                 {
-                    sudoku = CheckSection(sudoku, i, j);
+                    sudoku = func(sudoku, i, j);
+                    //sudoku = CheckSection(sudoku, i, j);
                 }
             }
             return sudoku;
@@ -216,12 +242,70 @@ namespace SudokuSolver.Logics
 
                 if (tempList.Count == 1)
                     sudoku[x][y] = tempList[0];
+                else if (tempList.Count == countG)
+                {
+                    //Try the first of the count options.
+                    sudoku[x][y] = tempList[0];
+                }
+                else if (tempList.Count < countG && tempList.Count != 0)
+                {
+                    //Try the first of the count options.
+                    sudoku[x][y] = tempList[0];
+                    //Also lower countG for now.
+                    countG = tempList.Count;
+                }
                 else
                     IsSolved = false;
             }
 
             return sudoku;
         }
-        #endregion  
+
+        /// <summary>
+        /// Adjusts countG to be as low as possible by checking all cells for their lowest Count.
+        /// </summary>
+        /// <param name="sudoku"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        private int[][] CheckGuessCount(int[][] sudoku, int x, int y)
+        {
+            if (sudoku[x][y] == 0)
+            {
+                List<int> tempList = arrOptions.ToList();
+                for (int i = 0; i < N2; i++)
+                {
+                    tempList.Remove(sudoku[x][i]);
+                    tempList.Remove(sudoku[i][y]);
+                }
+                int a = WhichBlock(x);
+                int b = WhichBlock(y);
+
+                for (int i = (0 + (a * N)); i < (N + (a * N)); i++)
+                {
+                    for (int j = (0 + (b * N)); j < (N + (b * N)); j++)
+                    {
+                        tempList.Remove(sudoku[i][j]);
+                    }
+                }
+
+                if (tempList.Count == 1)
+                {
+                    sudoku[x][y] = tempList[0];
+                    countG = 2;
+                    IsNewGuess = true;
+                }
+                else if (tempList.Count < countG && tempList.Count != 0)
+                {
+                    countG = tempList.Count;
+                    IsNewGuess = true;
+                }
+
+              
+            }
+            return sudoku;
+        }
+        #endregion
+
+ 
     }
 }
