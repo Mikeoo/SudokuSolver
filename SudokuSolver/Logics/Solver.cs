@@ -20,10 +20,13 @@ namespace SudokuSolver.Logics
         /// <summary>
         /// countG is to keep track of at which number of potential numbers to guess the computer can "guess" one.
         /// Setting countG to highest (9) before attempting to Solve.
+        /// indexG is to keep track of which index was already guessed in combination with the sudoku archives.
         /// </summary>
-        private int countG;
+        private int countG, indexG;
         private int[] arrOptions = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-        public bool IsSolved, IsNewGuess;
+        public bool IsSolved, IsNewGuess, IsValidArchive;
+        private List<SudokuArchive> sudokuArchives;
+
         public int[][] Solve(int[][] sudoku)
         {
             //Set count to 1 to not allow for guessing.
@@ -39,9 +42,44 @@ namespace SudokuSolver.Logics
 
         public int[][] SolveGuessing(int[][] sudoku)
         {
+            //Make new Archives list to aid with guessing.
+            sudokuArchives = new List<SudokuArchive>();
+            //Reset indexG to 0
+            indexG = 0;
 
-            sudoku = IterateSudokuGuess(sudoku);
-            sudoku = IterateSudokuSolve(sudoku);
+            do
+            {
+                sudoku = IterateSudokuGuess(sudoku);
+                if (IsNewGuess)
+                    sudoku = IterateSudokuSolve(sudoku);
+                else
+                {
+                    //If no new guess number can be found that means all options have been tried and the sudoku is not solved.
+                    //Hence go to the last entry of sudoku archives and make the sudoku that sudoku and change the index guess.
+                    do
+                    {
+                        int tempIndex = sudokuArchives.Count - 1;
+                        countG = sudokuArchives[tempIndex].IndexGuess + 1;
+
+                        //If countG is equal or bigger to GuessOptions that means all guesses have been tried.
+                        //Meaning a prior archived sudoku should be used instead.
+                        if (countG >= sudokuArchives[tempIndex].GuessOptions)
+                        {
+                            IsValidArchive = false;
+                            //Remove archive from list.
+                            sudokuArchives.RemoveAt(tempIndex);
+                        }
+                        else
+                        {
+                            //If it is a valid archive change bool and set sudoku to archived sudoku.
+                            IsValidArchive = true;
+                            sudoku = sudokuArchives[tempIndex].Sudoku;
+                        }
+                    } while (!IsValidArchive);
+                }
+            }
+            while (!IsSolved);
+  
             return sudoku;
         }
 
@@ -147,8 +185,9 @@ namespace SudokuSolver.Logics
         #region Guessing methods
         private int[][] IterateSudokuGuess(int[][] sudoku)
         {
-            //Set countG to highest possible.
+            //Set countG to highest possible. Reset IsNewGuess;
             countG = N2;
+            IsNewGuess = false;
             //Iterate through Sudoku to check for the lowest list count. Make that new countG;
             sudoku = IterateLoopSolve(sudoku, CheckGuessCount);
             sudoku = IterateAllBlocksSolve(sudoku, CheckGuessCount);
@@ -242,17 +281,13 @@ namespace SudokuSolver.Logics
 
                 if (tempList.Count == 1)
                     sudoku[x][y] = tempList[0];
-                else if (tempList.Count == countG)
+                else if (tempList.Count <= countG && tempList.Count != 0)
                 {
+                    //Make new Archive when a number is guessed.
+                    sudokuArchives.Add(new SudokuArchive { Sudoku = sudoku, IndexGuess = indexG , GuessOptions = tempList.Count});
+
                     //Try the first of the count options.
-                    sudoku[x][y] = tempList[0];
-                }
-                else if (tempList.Count < countG && tempList.Count != 0)
-                {
-                    //Try the first of the count options.
-                    sudoku[x][y] = tempList[0];
-                    //Also lower countG for now.
-                    countG = tempList.Count;
+                    sudoku[x][y] = tempList[indexG];
                 }
                 else
                     IsSolved = false;
@@ -288,13 +323,7 @@ namespace SudokuSolver.Logics
                     }
                 }
 
-                if (tempList.Count == 1)
-                {
-                    sudoku[x][y] = tempList[0];
-                    countG = 2;
-                    IsNewGuess = true;
-                }
-                else if (tempList.Count < countG && tempList.Count != 0)
+                if (tempList.Count < countG && tempList.Count != 0)
                 {
                     countG = tempList.Count;
                     IsNewGuess = true;

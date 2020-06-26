@@ -153,6 +153,7 @@
     </Compile>
     <Compile Include="Logics\Solver.cs" />
     <Compile Include="Models\Sudoku.cs" />
+    <Compile Include="Models\SudokuArchive.cs" />
     <Compile Include="Models\SudokuModel.cs" />
     <Compile Include="Models\Sudokus.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
