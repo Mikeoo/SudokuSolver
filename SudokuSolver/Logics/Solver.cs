@@ -17,6 +17,7 @@ namespace SudokuSolver.Logics
         /// the code to work on sudoku's of other N sizes.
         /// </summary>
         private static readonly int N = 3, N2 = 9;
+
         /// <summary>
         /// countG is to keep track of at which number of potential numbers to guess the computer can "guess" one.
         /// Setting countG to highest (9) before attempting to Solve.
@@ -96,10 +97,15 @@ namespace SudokuSolver.Logics
             return sudoku;
         }
 
+        //Variables needed for creation.
+        private Random Rnd = new Random();
+
         public int[][] Create(int[][] sudoku)
         {
+            CreateFilledSudoku(sudoku);
             return sudoku;
         }
+
         #region Initialize Variables.
         /// <summary>
         /// Generates ArrOptions 1 to N2 to draw from.
@@ -165,27 +171,63 @@ namespace SudokuSolver.Logics
         }
         #endregion
 
-        #region Solving methods
-        private int[][] IterateSudokuSolve(int[][] sudoku)
+        #region Creation Methods
+        private int[][] CreateFilledSudoku(int[][] sudoku)
         {
-            sudoku = IterateLoop(sudoku, CheckCell);
-            sudoku = IterateAllBlocks(sudoku, CheckCell);
+            for (int i = 0; i < N2; i++)
+            {
+                List<int> tempList = arrOptions.ToList();
+                for (int j = 0; j < N2; j++)
+                {
+                    AddNumber(sudoku, i, j, tempList);
+                }
+            }
             return sudoku;
         }
 
-        private int[][] IterateSudokuGuess(int[][] sudoku)
+        private void AddNumber(int[][] sudoku, int x, int y, List<int> optionList)
         {
-            //Set countG to highest possible. Reset IsNewGuess;
-            countG = N2;
-            IsNewGuess = false;
-            //Iterate through Sudoku to check for the lowest list count. Make that new countG;
-            sudoku = IterateLoop(sudoku, CheckGuessCount);
-            sudoku = IterateAllBlocks(sudoku, CheckGuessCount);
-
-            return sudoku;
+            var tempList = GiveCellOptions(sudoku, x, y, optionList);
+            if (tempList.Count != 0)
+            {
+                int tempInt = Rnd.Next(0, tempList.Count);
+                sudoku[x][y] = tempList[tempInt];
+                optionList.Remove(tempList[tempInt]);
+            }
         }
 
-        #region Iteration
+        private List<int> GiveCellOptions(int[][] sudoku, int x, int y, List<int> optionList)
+        {
+            //Make new tempList 1 to 9.
+            List<int> tempList = arrOptions.ToList();
+            //Remove all options that are not allowed.
+            for (int i = 0; i < N2; i++)
+            {
+                tempList.Remove(sudoku[x][i]);
+                tempList.Remove(sudoku[i][y]);
+            }
+
+            //Check if the tempList isn't bigger than 0. There is no need to check the block also.
+            if (tempList.Count > 0)
+            {
+                int a = WhichBlock(x);
+                int b = WhichBlock(y);
+
+                for (int i = (0 + (a * N)); i < (N + (a * N)); i++)
+                {
+                    for (int j = (0 + (b * N)); j < (N + (b * N)); j++)
+                    {
+                        tempList.Remove(sudoku[i][j]);
+                    }
+                }
+            }
+
+            //Interesect optionList with tempList to determine which actual options the cell has.
+            return optionList.Intersect(tempList).ToList();
+        }
+        #endregion
+
+        #region Iteration Methods
         private int[][] IterateLoop(int[][] sudoku, Func<int[][], int, int, int[][]> func)
         {
             for (int i = 0; i < N2; i++)
@@ -234,6 +276,26 @@ namespace SudokuSolver.Logics
             return sudoku;
         }
         #endregion
+
+        #region Solving methods
+        private int[][] IterateSudokuSolve(int[][] sudoku)
+        {
+            sudoku = IterateLoop(sudoku, CheckCell);
+            sudoku = IterateAllBlocks(sudoku, CheckCell);
+            return sudoku;
+        }
+
+        private int[][] IterateSudokuGuess(int[][] sudoku)
+        {
+            //Set countG to highest possible. Reset IsNewGuess;
+            countG = N2;
+            IsNewGuess = false;
+            //Iterate through Sudoku to check for the lowest list count. Make that new countG;
+            sudoku = IterateLoop(sudoku, CheckGuessCount);
+            sudoku = IterateAllBlocks(sudoku, CheckGuessCount);
+
+            return sudoku;
+        }
 
         private int[][] CheckCell(int[][] sudoku, int x, int y)
         {
@@ -305,7 +367,7 @@ namespace SudokuSolver.Logics
                     tempList.Remove(sudoku[i][y]);
                 }
 
-                //Check if the tempList is bigger than 1. If it isn't then no need to check the block also.
+                //Check if the tempList isn't bigger than 1. There is no need to check the block also.
                 if (tempList.Count > 1)
                 {
                     int a = WhichBlock(x);
