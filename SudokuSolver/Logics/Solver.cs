@@ -16,16 +16,19 @@ namespace SudokuSolver.Logics
         /// Having them as readonly numbers here and using them for itiration instead of hard coding would allow for 
         /// the code to work on sudoku's of other N sizes.
         /// </summary>
-        private readonly int N = 3, N2 = 9;
+        private static readonly int N = 3, N2 = 9;
         /// <summary>
         /// countG is to keep track of at which number of potential numbers to guess the computer can "guess" one.
         /// Setting countG to highest (9) before attempting to Solve.
-        /// indexG is to keep track of which index was already guessed in combination with the sudoku archives.
         /// </summary>
-        private int countG, indexG;
+        private int countG;
+        /// <summary>
+        /// Tto keep track of which index was already guessed in combination with the sudoku archives.
+        /// </summary>
+        private int indexG;
         private int[] arrOptions = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
         public bool IsSolved, IsNewGuess, IsValidArchive;
-        private List<SudokuArchive> sudokuArchives;
+        public List<SudokuArchive> sudokuArchives;
 
         public int[][] Solve(int[][] sudoku)
         {
@@ -42,16 +45,21 @@ namespace SudokuSolver.Logics
 
         public int[][] SolveGuessing(int[][] sudoku)
         {
-            //Make new Archives list to aid with guessing.
-            sudokuArchives = new List<SudokuArchive>();
-            //Reset indexG to 0
-            indexG = 0;
+                //Make new Archives list to aid with guessing.
+                sudokuArchives = new List<SudokuArchive>();
+                //Reset indexG to 0
+                indexG = 0;
 
+
+            //Temporarily removed Do while for For 10 loop to check progress sudoku solving.
             do
             {
                 sudoku = IterateSudokuGuess(sudoku);
                 if (IsNewGuess)
+                {
+                    IsSolved = true;
                     sudoku = IterateSudokuSolve(sudoku);
+                }
                 else
                 {
                     //If no new guess number can be found that means all options have been tried and the sudoku is not solved.
@@ -59,11 +67,15 @@ namespace SudokuSolver.Logics
                     do
                     {
                         int tempIndex = sudokuArchives.Count - 1;
-                        countG = sudokuArchives[tempIndex].IndexGuess + 1;
+                        Debug.WriteLine("Archives Count: " + sudokuArchives.Count);
 
-                        //If countG is equal or bigger to GuessOptions that means all guesses have been tried.
+                        //Add 1 to the IndexGuess and set IndexG to current IndexG.
+                        sudokuArchives[tempIndex].IndexGuess++;
+                        indexG = sudokuArchives[tempIndex].IndexGuess;
+
+                        //If indexG is equal or bigger to GuessOptions that means all guesses have been tried.
                         //Meaning a prior archived sudoku should be used instead.
-                        if (countG >= sudokuArchives[tempIndex].GuessOptions)
+                        if (indexG >= sudokuArchives[tempIndex].GuessOptions.Length)
                         {
                             IsValidArchive = false;
                             //Remove archive from list.
@@ -74,11 +86,16 @@ namespace SudokuSolver.Logics
                             //If it is a valid archive change bool and set sudoku to archived sudoku.
                             IsValidArchive = true;
                             sudoku = sudokuArchives[tempIndex].Sudoku;
+
+                            //Set the cell from the archives that was guessed to the next possible option.
+                            sudoku[sudokuArchives[tempIndex].CellX][sudokuArchives[tempIndex].CellY] = sudokuArchives[tempIndex].GuessOptions[indexG];
+
+                            //Set indexG back to 0 in case new guesses are made after this archive point.
+                            indexG = 0;
                         }
                     } while (!IsValidArchive);
                 }
-            }
-            while (!IsSolved);
+            }while (!IsSolved);
   
             return sudoku;
         }
@@ -103,18 +120,7 @@ namespace SudokuSolver.Logics
         #endregion
 
         #region Base Methods
-        /// <summary>
-        /// To calculate which block a cell is in.
-        /// e.g. x = 5.     x % N = 2.      5 - 2 = 3.  3/3 = 1.
-        /// The cell is 1 block to the right.
-        /// </summary>
-        /// <param name="a">Is the x or y index of the cell.</param>
-        /// <returns>The block x or y index.</returns>
-        private int WhichBlock(int a)
-        {
-            int i = (a - (a % N)) / N;
-            return i;
-        }
+   
 
         #region check cell methods
         private void CheckCell(int x, int y)
@@ -182,6 +188,43 @@ namespace SudokuSolver.Logics
 
         #endregion
 
+        #region support methods
+        /// <summary>
+        /// To calculate which block a cell is in.
+        /// e.g. x = 5.     x % N = 2.      5 - 2 = 3.  3/3 = 1.
+        /// The cell is 1 block to the right.
+        /// </summary>
+        /// <param name="a">Is the x or y index of the cell.</param>
+        /// <returns>The block x or y index.</returns>
+        static int WhichBlock(int a)
+        {
+            int i = (a - (a % N)) / N;
+            return i;
+        }
+
+        /// <summary>
+        /// Returns new jagged array copied from input value.
+        /// </summary>
+        /// <param name="sourceArr">The array to be copied.</param>
+        /// <returns></returns>
+        static int[][] CopyArrayJagged(int[][] sourceArr)
+        {
+            int length = sourceArr.Length;
+            int[][] outputArr = new int[length][];
+
+            for (var x = 0; x < length; x++)
+            {
+                int[] innerArr = sourceArr[x];
+                int inLength = innerArr.Length;
+                int[] newInnerArr = new int[inLength];
+                Array.Copy(innerArr, newInnerArr, inLength);
+                outputArr[x] = newInnerArr;
+            }
+
+            return outputArr;
+        }
+        #endregion
+
         #region Guessing methods
         private int[][] IterateSudokuGuess(int[][] sudoku)
         {
@@ -213,8 +256,6 @@ namespace SudokuSolver.Logics
                 {
                     sudoku = func(sudoku, i, j);
                     sudoku = func(sudoku, j, i);
-                    //sudoku = CheckSection(sudoku, i, j);
-                    //sudoku = CheckSection(sudoku, j, i);
                 }
             }
             return sudoku;
@@ -232,7 +273,6 @@ namespace SudokuSolver.Logics
                 for (int x = 0; x < N; x++)
                 {
                     sudoku = IterateBLockSolve(sudoku, x, y, func);
-                    //sudoku = IterateBLockSolve(sudoku, x, y);
                 }
             }
             return sudoku;
@@ -262,20 +302,31 @@ namespace SudokuSolver.Logics
         {
             if (sudoku[x][y] == 0)
             {
+                //Make temporary list.
                 List<int> tempList = arrOptions.ToList();
+
+                //Check row and column cell is in by keeping either x or y consistent and iterating through 9 cells.
+                //Remove any numbers that are present from the temporary list.
                 for (int i = 0; i < N2; i++)
                 {
                     tempList.Remove(sudoku[x][i]);
                     tempList.Remove(sudoku[i][y]);
                 }
-                int a = WhichBlock(x);
-                int b = WhichBlock(y);
 
-                for (int i = (0 + (a * N)); i < (N + (a * N)); i++)
+                //Check if the tempList is bigger than 1. If it isn't then no need to check the block also.
+                if (tempList.Count > 1)
                 {
-                    for (int j = (0 + (b * N)); j < (N + (b * N)); j++)
+                    //Check which block in the x and y direction the cell is in.
+                    int a = WhichBlock(x);
+                    int b = WhichBlock(y);
+
+                    //For said cell. Use the block knowledge to check the block area it is in for numbers and remove from temp list.
+                    for (int i = (0 + (a * N)); i < (N + (a * N)); i++)
                     {
-                        tempList.Remove(sudoku[i][j]);
+                        for (int j = (0 + (b * N)); j < (N + (b * N)); j++)
+                        {
+                            tempList.Remove(sudoku[i][j]);
+                        }
                     }
                 }
 
@@ -283,11 +334,15 @@ namespace SudokuSolver.Logics
                     sudoku[x][y] = tempList[0];
                 else if (tempList.Count <= countG && tempList.Count != 0)
                 {
-                    //Make new Archive when a number is guessed.
-                    sudokuArchives.Add(new SudokuArchive { Sudoku = sudoku, IndexGuess = indexG , GuessOptions = tempList.Count});
+                    //Make new Archive when a number is guessed, before the actual guess took place.
+                    sudokuArchives.Add(new SudokuArchive{Sudoku = CopyArrayJagged(sudoku), IndexGuess = indexG , GuessOptions = tempList.ToArray(), CellX = x, CellY = y});
 
                     //Try the first of the count options.
                     sudoku[x][y] = tempList[indexG];
+
+                    //Set countG to 1 to not allow furhter guessing at first.
+                    countG = 1;
+                    
                 }
                 else
                     IsSolved = false;
@@ -312,14 +367,19 @@ namespace SudokuSolver.Logics
                     tempList.Remove(sudoku[x][i]);
                     tempList.Remove(sudoku[i][y]);
                 }
-                int a = WhichBlock(x);
-                int b = WhichBlock(y);
 
-                for (int i = (0 + (a * N)); i < (N + (a * N)); i++)
+                //Check if the tempList is bigger than 1. If it isn't then no need to check the block also.
+                if (tempList.Count > 1)
                 {
-                    for (int j = (0 + (b * N)); j < (N + (b * N)); j++)
+                    int a = WhichBlock(x);
+                    int b = WhichBlock(y);
+
+                    for (int i = (0 + (a * N)); i < (N + (a * N)); i++)
                     {
-                        tempList.Remove(sudoku[i][j]);
+                        for (int j = (0 + (b * N)); j < (N + (b * N)); j++)
+                        {
+                            tempList.Remove(sudoku[i][j]);
+                        }
                     }
                 }
 
