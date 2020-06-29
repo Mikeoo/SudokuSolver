@@ -115,75 +115,6 @@ namespace SudokuSolver.Logics
         }
         #endregion
 
-        #region Base Methods
-   
-
-        #region check cell methods
-        private void CheckCell(int x, int y)
-        {
-            for (int i = 0; i < N2; i++)
-            {
-                //Do something with.
-                //sudoku[x][i] for checking one column.
-                //sudoku[i][x] for checking one row.
-            }
-            //Checks which block the cell is in for both x and y and calls Iterateblock with the results.
-            IterateBLock(WhichBlock(x), WhichBlock(y));
-
-        }
-
-        #endregion
-
-        #region Iteration Methods
-        private void IterateLoop(int[][] sudoku)
-        {
-            for (int i = 0; i < N2; i++)
-            {
-                for (int j = 0; j < N2; j++)
-                {
-                    //Do something with.
-                    //sudoku[i][j] for checking columns.
-                    //sudoku[j][i] for checking rows.
-                }
-            }
-        }
-
-        /// <summary>
-        /// x and y both loop N times.
-        /// To check each block in an N by N Sudoku.
-        /// Using IterateBlock method to deligate the actual cell checking.
-        /// </summary>
-        private void IterateAllBlocks()
-        {
-            for (int y = 0; y < N; y++)
-            {
-                for (int x = 0; x < N; x++)
-                {
-                    IterateBLock(x, y);
-                }
-            }
-        }
-
-        /// <summary>
-        /// For itirating through one singular block of size N by N.
-        /// Adding x/y * N to i and j respectively to determine which block to check.
-        /// </summary>
-        /// <param name="x">Number of blocks horizontal.</param>
-        /// <param name="y">Number of block vertical.</param>
-        private void IterateBLock(int x, int y)
-        {
-            for (int i = (0 + (x * N)); i < (N + (N * x)); i++)
-            {
-                for (int j = (0 + (y * N)); j < (N + (N * y)); j++)
-                {
-                    //Do something Sudoku[i][j]
-                }
-            }
-        }
-        #endregion
-
-        #endregion
-
         #region support methods
         /// <summary>
         /// To calculate which block a cell is in.
@@ -234,30 +165,28 @@ namespace SudokuSolver.Logics
         }
         #endregion
 
-        #region Guessing methods
+        #region Solving methods
+        private int[][] IterateSudokuSolve(int[][] sudoku)
+        {
+            sudoku = IterateLoop(sudoku, CheckCell);
+            sudoku = IterateAllBlocks(sudoku, CheckCell);
+            return sudoku;
+        }
+
         private int[][] IterateSudokuGuess(int[][] sudoku)
         {
             //Set countG to highest possible. Reset IsNewGuess;
             countG = N2;
             IsNewGuess = false;
             //Iterate through Sudoku to check for the lowest list count. Make that new countG;
-            sudoku = IterateLoopSolve(sudoku, CheckGuessCount);
-            sudoku = IterateAllBlocksSolve(sudoku, CheckGuessCount);
-           
-            return sudoku;
-        }
-        #endregion
+            sudoku = IterateLoop(sudoku, CheckGuessCount);
+            sudoku = IterateAllBlocks(sudoku, CheckGuessCount);
 
-        #region Solving methods
-        private int[][] IterateSudokuSolve(int[][] sudoku)
-        {
-            sudoku = IterateLoopSolve(sudoku, CheckSection);
-            sudoku = IterateAllBlocksSolve(sudoku, CheckSection);
             return sudoku;
         }
 
         #region Iteration
-        private int[][] IterateLoopSolve(int[][] sudoku, Func<int[][], int, int, int[][]> func)
+        private int[][] IterateLoop(int[][] sudoku, Func<int[][], int, int, int[][]> func)
         {
             for (int i = 0; i < N2; i++)
             {
@@ -275,13 +204,13 @@ namespace SudokuSolver.Logics
         /// To check each block in an N by N Sudoku.
         /// Using IterateBlock method to deligate the actual cell checking.
         /// </summary>
-        private int[][] IterateAllBlocksSolve(int[][] sudoku, Func<int[][], int, int, int[][]> func)
+        private int[][] IterateAllBlocks(int[][] sudoku, Func<int[][], int, int, int[][]> func)
         {
             for (int y = 0; y < N; y++)
             {
                 for (int x = 0; x < N; x++)
                 {
-                    sudoku = IterateBLockSolve(sudoku, x, y, func);
+                    sudoku = IterateBLock(sudoku, x, y, func);
                 }
             }
             return sudoku;
@@ -293,7 +222,7 @@ namespace SudokuSolver.Logics
         /// </summary>
         /// <param name="x">Number of blocks horizontal.</param>
         /// <param name="y">Number of block vertical.</param>
-        private int[][] IterateBLockSolve(int[][] sudoku, int x, int y, Func<int[][], int, int, int[][]> func)
+        private int[][] IterateBLock(int[][] sudoku, int x, int y, Func<int[][], int, int, int[][]> func)
         {
             for (int i = (0 + (x * N)); i < (N + (N * x)); i++)
             {
@@ -306,7 +235,7 @@ namespace SudokuSolver.Logics
         }
         #endregion
 
-        private int[][] CheckSection(int[][] sudoku, int x, int y)
+        private int[][] CheckCell(int[][] sudoku, int x, int y)
         {
             if (sudoku[x][y] == 0)
             {
