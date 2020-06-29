@@ -36,8 +36,8 @@ namespace SudokuSolver.Logics
             countG = 1;
             do
             {
-                IsSolved = true;
                 sudoku = IterateSudokuSolve(sudoku);
+                CheckIsSolved(sudoku);
             } while (!IsSolved);
 
             return sudoku;
@@ -50,16 +50,11 @@ namespace SudokuSolver.Logics
                 //Reset indexG to 0
                 indexG = 0;
 
-
-            //Temporarily removed Do while for For 10 loop to check progress sudoku solving.
             do
             {
                 sudoku = IterateSudokuGuess(sudoku);
                 if (IsNewGuess)
-                {
-                    IsSolved = true;
                     sudoku = IterateSudokuSolve(sudoku);
-                }
                 else
                 {
                     //If no new guess number can be found that means all options have been tried and the sudoku is not solved.
@@ -95,6 +90,7 @@ namespace SudokuSolver.Logics
                         }
                     } while (!IsValidArchive);
                 }
+                CheckIsSolved(sudoku);
             }while (!IsSolved);
   
             return sudoku;
@@ -223,6 +219,19 @@ namespace SudokuSolver.Logics
 
             return outputArr;
         }
+
+        private void CheckIsSolved(int[][] sudoku)
+        {
+            IsSolved = true;
+            for (int i = 0; i < N2; i++)
+            {
+                for (int j = 0; j < N2; j++)
+                {
+                    if (sudoku[i][j] == 0)
+                        IsSolved = false;
+                }
+            }
+        }
         #endregion
 
         #region Guessing methods
@@ -291,7 +300,6 @@ namespace SudokuSolver.Logics
                 for (int j = (0 + (y * N)); j < (N + (N * y)); j++)
                 {
                     sudoku = func(sudoku, i, j);
-                    //sudoku = CheckSection(sudoku, i, j);
                 }
             }
             return sudoku;
