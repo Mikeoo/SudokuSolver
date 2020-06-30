@@ -28,7 +28,7 @@ namespace SudokuSolver.Logics
         /// </summary>
         private int indexG;
         private int[] arrOptions = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-        public bool IsSolved, IsNewGuess, IsValidArchive;
+        public bool IsSolved, IsNewGuess, IsValidArchive, NewArchive = false;
         public List<SudokuArchive> sudokuArchives;
 
         public int[][] Solve(int[][] sudoku)
@@ -53,8 +53,9 @@ namespace SudokuSolver.Logics
 
             do
             {
-                sudoku = IterateSudokuGuess(sudoku);
-                if (IsNewGuess)
+                if (!NewArchive)
+                    sudoku = IterateSudokuGuess(sudoku);
+                if (IsNewGuess && !NewArchive)
                     sudoku = IterateSudokuSolve(sudoku);
                 else
                 {
@@ -69,9 +70,16 @@ namespace SudokuSolver.Logics
                         sudokuArchives[tempIndex].IndexGuess++;
                         indexG = sudokuArchives[tempIndex].IndexGuess;
 
+                        if (NewArchive)
+                        {
+                            IsValidArchive = false;
+                            NewArchive = false;
+                            //Remove Archive from list.
+                            sudokuArchives.RemoveAt(tempIndex);
+                        }
                         //If indexG is equal or bigger to GuessOptions that means all guesses have been tried.
                         //Meaning a prior archived sudoku should be used instead.
-                        if (indexG >= sudokuArchives[tempIndex].GuessOptions.Length)
+                        else if (indexG >= sudokuArchives[tempIndex].GuessOptions.Length)
                         {
                             IsValidArchive = false;
                             //Remove archive from list.
@@ -181,6 +189,10 @@ namespace SudokuSolver.Logics
                 {
                     AddNumber(sudoku, i, j, tempList);
                 }
+                if (tempList.Count != 0)
+                {
+
+                }
             }
             return sudoku;
         }
@@ -235,8 +247,11 @@ namespace SudokuSolver.Logics
                 for (int j = 0; j < N2; j++)
                 {
                     sudoku = func(sudoku, i, j);
-                    sudoku = func(sudoku, j, i);
+                    if (NewArchive)
+                        break;
                 }
+                if (NewArchive)
+                    break;
             }
             return sudoku;
         }
@@ -253,7 +268,11 @@ namespace SudokuSolver.Logics
                 for (int x = 0; x < N; x++)
                 {
                     sudoku = IterateBLock(sudoku, x, y, func);
+                    if (NewArchive)
+                        break;
                 }
+                if (NewArchive)
+                    break;
             }
             return sudoku;
         }
@@ -271,7 +290,11 @@ namespace SudokuSolver.Logics
                 for (int j = (0 + (y * N)); j < (N + (N * y)); j++)
                 {
                     sudoku = func(sudoku, i, j);
+                    if (NewArchive)
+                        break;
                 }
+                if (NewArchive)
+                    break;
             }
             return sudoku;
         }
@@ -290,9 +313,14 @@ namespace SudokuSolver.Logics
             //Set countG to highest possible. Reset IsNewGuess;
             countG = N2;
             IsNewGuess = false;
+            NewArchive = false;
+
             //Iterate through Sudoku to check for the lowest list count. Make that new countG;
             sudoku = IterateLoop(sudoku, CheckGuessCount);
-            sudoku = IterateAllBlocks(sudoku, CheckGuessCount);
+
+            //If a NewArchive is needed do not bother checking.
+            if (!NewArchive)
+                sudoku = IterateAllBlocks(sudoku, CheckGuessCount);
 
             return sudoku;
         }
@@ -312,14 +340,14 @@ namespace SudokuSolver.Logics
                     tempList.Remove(sudoku[i][y]);
                 }
 
-                //Check if the tempList is bigger than 1. If it isn't then no need to check the block also.
-                if (tempList.Count > 1)
+                //Check if the tempList is bigger than 0. If it isn't then no need to check the block also.
+                if (tempList.Count > 0)
                 {
                     //Check which block in the x and y direction the cell is in.
                     int a = WhichBlock(x);
                     int b = WhichBlock(y);
 
-                    //For said cell. Use the block knowledge to check the block area it is in for numbers and remove from temp list.
+                    //For said cell. Use the block knowledge to check the block it is in for numbers and remove from temp list.
                     for (int i = (0 + (a * N)); i < (N + (a * N)); i++)
                     {
                         for (int j = (0 + (b * N)); j < (N + (b * N)); j++)
@@ -331,7 +359,12 @@ namespace SudokuSolver.Logics
 
                 if (tempList.Count == 1)
                     sudoku[x][y] = tempList[0];
-                else if (tempList.Count <= countG && tempList.Count != 0)
+                else if (tempList.Count == 0)
+                {
+                    //If the tempList.Count == 0 that means there are no possible options and hence the sudoku can't be solved.
+                    NewArchive = true;
+                }
+                else if (tempList.Count <= countG)
                 {
                     //Make new Archive when a number is guessed, before the actual guess took place.
                     sudokuArchives.Add(new SudokuArchive{Sudoku = CopyArrayJagged(sudoku), IndexGuess = indexG , GuessOptions = tempList.ToArray(), CellX = x, CellY = y});
@@ -341,10 +374,8 @@ namespace SudokuSolver.Logics
 
                     //Set countG to 1 to not allow furhter guessing at first.
                     countG = 1;
-                    
                 }
-                else
-                    IsSolved = false;
+
             }
 
             return sudoku;
@@ -367,22 +398,26 @@ namespace SudokuSolver.Logics
                     tempList.Remove(sudoku[i][y]);
                 }
 
-                //Check if the tempList isn't bigger than 1. There is no need to check the block also.
-                if (tempList.Count > 1)
+                //Check block areas
+                //If the tempList isn't bigger than 1. There is no need to check the block also.
+                if (tempList.Count > 0)
                 {
                     int a = WhichBlock(x);
                     int b = WhichBlock(y);
 
-                    for (int i = (0 + (a * N)); i < (N + (a * N)); i++)
+                    for (int i = (0 + (a * N)); i < (N + (a * N)); i += 2)
                     {
-                        for (int j = (0 + (b * N)); j < (N + (b * N)); j++)
+                        for (int j = (0 + (b * N)); j < (N + (b * N)); j += 2)
                         {
                             tempList.Remove(sudoku[i][j]);
                         }
                     }
                 }
-
-                if (tempList.Count < countG && tempList.Count != 0)
+                if (tempList.Count == 0)
+                {
+                    NewArchive = true;
+                }
+                else if (tempList.Count < countG)
                 {
                     countG = tempList.Count;
                     IsNewGuess = true;
