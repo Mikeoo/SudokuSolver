@@ -111,7 +111,7 @@ namespace SudokuSolver.Logics
 
         public int[][] Create(int[][] sudoku)
         {
-            CreateFilledSudoku(sudoku);
+            sudoku = CreateFilledSudoku(sudoku);
             return sudoku;
         }
 
@@ -178,66 +178,101 @@ namespace SudokuSolver.Logics
                 }
             }
         }
+
+        private void EmptySudoku(int[][] sudoku)
+        {
+            for (int i = 0; i < N2; i++)
+            {
+                for (int j = 0; j < N2; j++)
+                {
+                    sudoku[i][j] = 0;
+                }
+            }
+        }
         #endregion
 
         #region Creation Methods
         private int[][] CreateFilledSudoku(int[][] sudoku)
         {
-            for (int i = 0; i < N2; i++)
-            {
-                List<int> tempList = arrOptions.ToList();
+                EmptySudoku(sudoku);
+                //Create list 1 to 9 to place 9 random numbers at 9 random heights.
+                List<int> tempListA = arrOptions.ToList();
                 for (int j = 0; j < N2; j++)
                 {
-                    AddNumber(sudoku, i, j, tempList);
+                    int tempInt = Rnd.Next(0, tempListA.Count);
+                    int tempIntB = Rnd.Next(0, N2);
+                    sudoku[tempIntB][j] = tempListA[tempInt];
+                    tempListA.RemoveAt(tempInt);
                 }
-                if (tempList.Count != 0)
-                {
+                //Then call SolveGuessing to fill in remainder of Sudoku.
+                sudoku = SolveGuessing(sudoku);
 
-                }
-            }
+
+
             return sudoku;
         }
 
-        private void AddNumber(int[][] sudoku, int x, int y, List<int> optionList)
-        {
-            var tempList = GiveCellOptions(sudoku, x, y, optionList);
-            if (tempList.Count != 0)
-            {
-                int tempInt = Rnd.Next(0, tempList.Count);
-                sudoku[x][y] = tempList[tempInt];
-                optionList.Remove(tempList[tempInt]);
-            }
-        }
+        #region First draft Methods.
+        /*
+       private int[][] CreateFilledSudoku(int[][] sudoku)
+       {
+           for (int i = 0; i < N2; i++)
+           {
+               List<int> tempList = arrOptions.ToList();
 
-        private List<int> GiveCellOptions(int[][] sudoku, int x, int y, List<int> optionList)
-        {
-            //Make new tempList 1 to 9.
-            List<int> tempList = arrOptions.ToList();
-            //Remove all options that are not allowed.
-            for (int i = 0; i < N2; i++)
-            {
-                tempList.Remove(sudoku[x][i]);
-                tempList.Remove(sudoku[i][y]);
-            }
+               for (int j = 0; j < N2; j++)
+               {
+                   AddNumber(sudoku, i, j, tempList);
+               }
 
-            //Check if the tempList isn't bigger than 0. There is no need to check the block also.
-            if (tempList.Count > 0)
-            {
-                int a = WhichBlock(x);
-                int b = WhichBlock(y);
+           }
+           return sudoku;
+       }
 
-                for (int i = (0 + (a * N)); i < (N + (a * N)); i++)
-                {
-                    for (int j = (0 + (b * N)); j < (N + (b * N)); j++)
-                    {
-                        tempList.Remove(sudoku[i][j]);
-                    }
-                }
-            }
+       private void AddNumber(int[][] sudoku, int x, int y, List<int> optionList)
+       {
+           var tempList = GiveCellOptions(sudoku, x, y, optionList);
 
-            //Interesect optionList with tempList to determine which actual options the cell has.
-            return optionList.Intersect(tempList).ToList();
-        }
+           if (tempList.Count != 0)
+           {
+               int tempInt = Rnd.Next(0, tempList.Count);
+               sudoku[x][y] = tempList[tempInt];
+               optionList.Remove(tempList[tempInt]);
+           }
+       }
+
+       private List<int> GiveCellOptions(int[][] sudoku, int x, int y, List<int> optionList)
+       {
+           //Make new tempList 1 to 9.
+           List<int> tempList = arrOptions.ToList();
+           //Remove all options that are not allowed.
+           for (int i = 0; i < N2; i++)
+           {
+               tempList.Remove(sudoku[x][i]);
+               tempList.Remove(sudoku[i][y]);
+           }
+
+           //Check if the tempList isn't bigger than 0. There is no need to check the block also.
+           if (tempList.Count > 0)
+           {
+               int a = WhichBlock(x);
+               int b = WhichBlock(y);
+
+               for (int i = (0 + (a * N)); i < (N + (a * N)); i++)
+               {
+                   for (int j = (0 + (b * N)); j < (N + (b * N)); j++)
+                   {
+                       tempList.Remove(sudoku[i][j]);
+                   }
+               }
+           }
+
+           //Interesect optionList with tempList to determine which actual options the cell has.
+           return optionList.Intersect(tempList).ToList();
+       }  
+       */
+        #endregion
+
         #endregion
 
         #region Iteration Methods
@@ -312,7 +347,7 @@ namespace SudokuSolver.Logics
         private int[][] IterateSudokuGuess(int[][] sudoku)
         {
             //Set countG to highest possible. Reset IsNewGuess;
-            countG = N2;
+            countG = N2 + 1;
             IsNewGuess = false;
             NewArchive = false;
 
