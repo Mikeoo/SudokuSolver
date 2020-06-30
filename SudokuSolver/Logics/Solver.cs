@@ -28,7 +28,12 @@ namespace SudokuSolver.Logics
         /// </summary>
         private int indexG;
         private int[] arrOptions = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-        public bool IsSolved, IsNewGuess, IsValidArchive, NewArchive = false;
+        /// <summary>
+        /// Notes if a new archive needs to be pulled from list.
+        /// Based on if a cell is found that needs to be filled but has no options.
+        /// </summary>
+        public bool IsSolved, IsNewGuess, IsValidArchive;
+        public bool NewArchive = false;
         public List<SudokuArchive> sudokuArchives;
 
         public int[][] Solve(int[][] sudoku)
@@ -70,16 +75,11 @@ namespace SudokuSolver.Logics
                         sudokuArchives[tempIndex].IndexGuess++;
                         indexG = sudokuArchives[tempIndex].IndexGuess;
 
-                        if (NewArchive)
-                        {
-                            IsValidArchive = false;
-                            NewArchive = false;
-                            //Remove Archive from list.
-                            sudokuArchives.RemoveAt(tempIndex);
-                        }
+                 
+
                         //If indexG is equal or bigger to GuessOptions that means all guesses have been tried.
                         //Meaning a prior archived sudoku should be used instead.
-                        else if (indexG >= sudokuArchives[tempIndex].GuessOptions.Length)
+                        if (indexG >= sudokuArchives[tempIndex].GuessOptions.Length)
                         {
                             IsValidArchive = false;
                             //Remove archive from list.
@@ -89,6 +89,7 @@ namespace SudokuSolver.Logics
                         {
                             //If it is a valid archive change bool and set sudoku to archived sudoku.
                             IsValidArchive = true;
+                            NewArchive = false;
                             sudoku = sudokuArchives[tempIndex].Sudoku;
 
                             //Set the cell from the archives that was guessed to the next possible option.
