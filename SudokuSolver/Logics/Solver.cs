@@ -40,10 +40,16 @@ namespace SudokuSolver.Logics
         {
             //Set count to 1 to not allow for guessing.
             countG = 1;
+            int attempts = 0;
             do
             {
                 sudoku = IterateSudokuSolve(sudoku);
                 CheckIsSolved(sudoku);
+
+                //Keep track of attempts and break out of loop after more than 3.
+                attempts++;
+                if (attempts > 3)
+                    break;
             } while (!IsSolved);
 
             return sudoku;
@@ -112,6 +118,7 @@ namespace SudokuSolver.Logics
         public int[][] Create(int[][] sudoku)
         {
             sudoku = CreateFilledSudoku(sudoku);
+            sudoku = RemoveCells(sudoku);
             return sudoku;
         }
 
@@ -207,9 +214,91 @@ namespace SudokuSolver.Logics
                 //Then call SolveGuessing to fill in remainder of Sudoku.
                 sudoku = SolveGuessing(sudoku);
 
-
-
             return sudoku;
+        }
+
+        private int[][] RemoveCells(int[][] sudoku)
+        {
+            int[][] backupSudoku, newSudoku;
+            int rndNum, rndIndex, attempt = 0, count = 0;
+            List<int> columnsList = arrOptions.ToList();
+
+            //Remove cells, check if solveable. Until 3 attempts were it was not solvable anymore.
+            //Then return sudoku.
+            do
+            {
+                //Makes backup of sudoku before removal.
+                backupSudoku = CopyArrayJagged(sudoku);
+
+                //First 4 attempts. Set one randomly selected column all to 0.
+                if (attempt < 4)
+                {
+                    //Generate rndIndex based on length rowslist. 
+                    rndIndex= Rnd.Next(0, columnsList.Count);
+                    //rndNum is number at index in rowslist - 1 to adjust number to correct indexing position for array.
+                    rndNum = columnsList[rndIndex] - 1;
+                    //Remove selected column from list using rndIndex.
+                    columnsList.RemoveAt(rndIndex);
+
+                    //Set each cell 1 to 9 for the selected row to 0.
+                    for (int j = 0; j < N2; j++)
+                    {
+                        sudoku[rndNum][j] = 0;
+                    }
+                }
+                else if (attempt < 15)
+                {
+                    //For each column, randomly remove 9 cells.
+                    for (int i = 0; i < N2; i++)
+                    {
+                        for (int j = 0; j < N2; j++)
+                        {
+                            rndIndex = Rnd.Next(0, N2);
+                            sudoku[i][rndIndex] = 0;
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < N2; i++)
+                    {
+                        List<int> tempListA = sudoku[i].Where(x => x != 0).ToList();
+                        List<int> tempListB = sudoku[i].ToList();
+                        for (int j = 0; j < (tempListA.Count - 1); j++)
+                        {
+                            rndIndex = Rnd.Next(0, tempListA.Count);
+                            rndNum = tempListA[rndIndex];
+
+                            sudoku[i][tempListB.FindIndex(x => x == rndNum)] = 0;
+                            tempListA.RemoveAt(rndIndex);
+                        }
+                    }
+                }
+                newSudoku = CopyArrayJagged(sudoku);
+
+                //Attempt to solve using logic.
+                CheckIsSolved(Solve(sudoku));
+                //If it was not able to be solve. Revert to back-up.
+                if (!IsSolved)
+                {
+                    sudoku = backupSudoku;
+                    attempt++;
+                    Debug.WriteLine("Attempt: " + attempt + "Count: " + count);
+                }
+                else
+                    sudoku = newSudoku;
+
+                count = 0;
+                //Count all numbers still present in sudoku that are not 0.
+                for (int i = 0; i < N2; i++)
+                {
+                    count += sudoku[i].Where(x => x != 0).Count();
+                }
+                if (count < 20)
+                    break;
+
+            } while (attempt < 500);
+                return sudoku;
         }
 
         #region First draft Methods.
